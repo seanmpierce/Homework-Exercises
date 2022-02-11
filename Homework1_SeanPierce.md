@@ -160,7 +160,7 @@ variance progresses with K. Let’s start with the 350 S-class.
 
     ## [1] 13562.98
 
-![](Homework-Exercises/Homework1_SeanPierce_files/figure-markdown_strict/unnamed-chunk-26-1.png)
+![](Homework1_SeanPierce_files/figure-markdown_strict/unnamed-chunk-26-1.png)
 
     ## [1] 11384.46
 
