@@ -82,7 +82,7 @@ from the 1997 hit-film “Con Air” starring Nicholas Cage.
     appeared on the Billboard 100 each year). How has it changed over
     time?
 
-![](Homework1_SeanPierce_files/figure-markdown_strict/unnamed-chunk-14-1.png)
+<img src= "Homework1_SeanPierce_files/figure-markdown_strict/unnamed-chunk-14-1.png" />
 
 There has been significant fluctuations in the diversity of music
 overtime. We can see that the 1960s had the greatest diversity. The
