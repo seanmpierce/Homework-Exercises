@@ -32,7 +32,7 @@ but with less frequent flights.
     ## 1  2008 WN             1116     8.53 
     ## 2  2008 YV              115    -0.875
 
-<img src="Homework1_SeanPierce_files/figure-markdown_strict/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
+<img src="Homework1_SeanPierce_files/figure-markdown_strict/unnamed-chunk-6-1.png" style=display: block; margin: auto; />
 
     ## Warning: Removed 3 rows containing non-finite values (stat_boxplot).
 
