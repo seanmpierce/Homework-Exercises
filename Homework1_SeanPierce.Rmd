@@ -1,7 +1,6 @@
 ---
 output: 
-  pdf_document: default
-  html_document: default
+  md_document
 ---
 # Homework 1
 ## Sean Pierce
