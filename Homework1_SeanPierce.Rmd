@@ -617,5 +617,5 @@ p_test_10 + geom_line(aes(x = mileage, y = price_pred10_65), color='red', size=0
 It seems that the 65 AMG predictive model has a lower average RMSE than the 350.  
 The 350 s-class has a higher optimal value of K.This is most likely true because the observations are more concentrated. There is less variance in price for a given mileage.
 
-knitr::knit("my_file.Rmd")
+
 
