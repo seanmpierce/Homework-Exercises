@@ -32,7 +32,7 @@ but with less frequent flights.
     ## 1  2008 WN             1116     8.53 
     ## 2  2008 YV              115    -0.875
 
-<img src="Homework-Exercises/Homework1_SeanPierce_files/figure-markdown_strict/unnamed-chunk-6-1.png" style="display:block;margin:auto;" />
+<img src="Homework1_SeanPierce_files/figure-markdown_strict/unnamed-chunk-6-1.png" style="display:block;margin:auto;" />
 
     ## Warning: Removed 3 rows containing non-finite values (stat_boxplot).
 
@@ -160,7 +160,7 @@ variance progresses with K. Let’s start with the 350 S-class.
 
     ## [1] 13562.98
 
-![](Homework1_SeanPierce_files/figure-markdown_strict/unnamed-chunk-26-1.png)
+![](Homework-Exercises/Homework1_SeanPierce_files/figure-markdown_strict/unnamed-chunk-26-1.png)
 
     ## [1] 11384.46
 
