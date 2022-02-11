@@ -1,0 +1,621 @@
+---
+output: 
+  pdf_document: default
+  html_document: default
+---
+# Homework 1
+## Sean Pierce
+```{r include=FALSE}
+library(tidyverse)
+library(markdown)
+library(magrittr)
+library(mosaic)
+library(dplyr)
+library(ggplot2)
+library(rsample)  
+library(caret)
+library(modelr)
+library(parallel)
+library(foreach)
+library(lubridate)
+```
+**1)**  
+So the year is 2008 and you've just finished your first Statistical Learning assignment. While you learned a lot, it was pretty tough!
+You decide to treat yourself for all your hard work by taking a trip to Las Vegas. What's the best month/day to go to minimize your delay, and which airline should you fly?  
+
+Let's explore the ABIA data set to answer these questions!  
+
+First let's look at the carriers that depart from Austin heading for Las Vegas.
+```{r include=FALSE}
+ABIA = read.csv("/Users/seanpierce/Documents/GitHub/ECO395M/data/ABIA.csv")
+
+dep_austin = ABIA %>%
+  filter(Origin=='AUS', Dest=='LAS') %>%
+  group_by(DepDelay, UniqueCarrier, Month) %>%
+  mutate(month = month.name[Month]) 
+
+```
+
+```{r echo=FALSE}
+unique = view(unique(dep_austin$UniqueCarrier))
+unique
+```
+
+Carriers are Mesa airlines (YV) and Southwest Airlines (WN)
+There are only two carries that fly to LAS in 2008 which should make our choice simpler.   
+
+Let's see which one is better:
+
+```{r include=FALSE}
+by_carrier_DepDelay = dep_austin %>%
+  group_by(Month, DayofMonth, UniqueCarrier) %>%
+  select(UniqueCarrier, Month, DayofMonth, DepDelay) %>%
+  summarize(avg_delay = mean(DepDelay)) %>%
+  mutate(month = month.name[Month])
+
+
+WN = dep_austin %>%
+  group_by(Year, UniqueCarrier) %>%
+  summarize(count = n(),
+            avg_delay = mean_(DepDelay, na.rm = TRUE))
+
+
+WN_avg = by_carrier_DepDelay %>%
+  filter(UniqueCarrier=='WN')
+
+
+YV_avg = by_carrier_DepDelay %>%
+  filter(UniqueCarrier=='YV')
+
+```
+
+The red line is the average delay for the year. Mesa is clearly lower, but with less frequent flights.
+```{r echo=FALSE}
+WN
+```
+
+```{r echo=FALSE, fig.height=4, fig.align='center'}
+ggplot(WN_avg) +
+  geom_boxplot(aes(x=month, y=avg_delay)) +
+  geom_hline(yintercept = 8.53, linetype = 'dashed', color = 'red') +
+  ggtitle("Southwest Average Departure Delay by carrier to LAS airport") +
+  coord_flip(expand = TRUE) +
+  ylab("Delay in minutes")
+
+ggplot(YV_avg) +
+  geom_boxplot(aes(x=month, y=avg_delay)) +
+  geom_hline(yintercept = -0.87, linetype = 'dashed', color = 'red') +
+  ggtitle("Mesa Average Departure Delay by carrier to LAS airport") +
+  coord_flip(expand = TRUE) +
+  ylab("Delay in minutes")
+```
+
+Flying with Mesa in January will give you the lowester average departure delay.  
+
+Let's go further and see the best day in January to fly with Mesa:
+
+```{r include=FALSE}
+YV_January = YV_avg %>%
+  filter(month=='January')
+```
+
+```{r echo=FALSE, fig.height=3, fig.align='center'}
+ggplot(YV_January) +
+  geom_line(aes(x=DayofMonth, y=avg_delay)) +
+  xlab("Day in January")+
+  ylab("Delay in minutes")
+```
+If you hate departure delays any day of the second week in January is the best time to go.
+\newpage
+
+**2)**  
+```{r include=FALSE}
+billboard = read.csv("/Users/seanpierce/Documents/GitHub/ECO395M/data/billboard.csv")
+```
+A. 
+```{r include=FALSE}
+top_songs = billboard %>%
+  group_by(performer, song) %>%
+  summarize(count = n()) %>%
+  arrange(desc(count)) %>%
+  filter(count>=64)
+```
+```{r, echo=FALSE}
+top_songs
+```
+  This plot shows us the most popular songs from 1959-2020 as defined as the number of weeks spent on the Billboard 100. The total number of weeks is contained in the count column.
+  Imagine Dragons's "Radioactive" took the top spot for the most popular song with AWOLNATION's "Sail" a close second.  
+  These results are not surprising if you listened to the radio at all in the past decade. Not my cup of tea, but who am I to judge?
+  The only surprisinng result is LeAnn Rimes's "How Do I Live", the title track from the 1997 hit-film "Con Air" starring Nicholas Cage.
+
+
+\newpage
+B. 
+Now we move on to musical diversity (number of unique songs that appeared on the Billboard 100 each year). How has it changed over time?  
+
+
+```{r include=FALSE}
+diversity = billboard %>%
+  group_by(song_id) %>%
+  select(song_id, year) %>%
+  unique(incomparables = FALSE) %>%
+  filter(year != 1958 & year != 2021) %>%
+  arrange(year)
+  
+```
+
+```{r include=FALSE}
+unique = diversity %>%
+  group_by(year) %>%
+  summarize(count = n())
+```
+
+```{r echo=FALSE}
+ggplot(unique) +
+  geom_line(aes(x=year, y=count)) +
+  ggtitle("Musical Diversity") +
+  xlab("Year") +
+  ylab("Unique Songs")
+```
+
+  There has been significant fluctuations in the diversity of music overtime. We can see that the 1960s had the greatest diversity. The trend in diversity fell to an all-time low in the 2000s (Thanks to Smash Mouth's "All-Star" in 1999. There's no doubt that No Doubt is responsible for this as well). The trend reversed in the early 2000s and has recently peaked. 
+\newpage
+C. 
+
+```{r include=FALSE}
+ten_week = billboard %>%
+  select(weeks_on_chart, performer, song_id) %>%
+  group_by(performer, song_id) %>%
+  summarize(count = n()) %>%
+  arrange(desc(count)) %>%
+  filter(count>=10)
+ten_week
+
+artists = ten_week %>%
+  group_by(performer) %>%
+  summarize(count = n()) %>%
+  filter(count >= 30) %>%
+  arrange(desc(count))
+artists
+```
+```{r echo=FALSE} 
+ggplot(artists) +
+  geom_col(aes(fct_reorder(performer, count),
+                   count)) +
+  coord_flip(expand = TRUE) +
+  xlab("Artist") +
+  ylab("Total Ten Week+ Hits") +
+  ggtitle("Most Hits By Artist")
+  
+```
+This neat graph displays what can be thought of as the most popular musicians of modern times. We define the popularity as the number of songs they've written that spent ten weeks or longer on the Billboard.  A surprising result is the high amount of country music stars on this list.  
+
+\newpage
+
+**3)**
+```{r include=FALSE}
+olympics_top20 = read.csv("/Users/seanpierce/Documents/GitHub/ECO395M/data/olympics_top20.csv")
+```
+Let's take a look at historical data for the Olympics and try to glean some interesting facts it. (A) what is the 95th percentile of height for female competitors across all events? (B) Which women's event had the greatest variability in competitor's heights across the entire history of the Olympics? (C) How has the average age of male and female Olympic swimmers changed over time?  
+A. Note: Height reported in Centimeters.
+```{r include=FALSE}
+f_height = olympics_top20 %>%
+  filter(sex=='F') %>%
+  summarize(quantile(height, prob=c(0.95)))
+```
+```{r echo=FALSE}
+f_height
+```
+ 
+
+B. The event with the highest variability in women's heights is Coxed Fours Rowing. The Coxswain does not row, but is in charge of steering the boat, and being small in stature reduces the drag. Those rowing should be taller for increased power from greater arm length. [Source](https://en.wikipedia.org/wiki/Coxswain_(rowing))
+```{r include=FALSE}
+height_var = olympics_top20 %>%
+  filter(sex=='F') %>%
+  group_by(event) %>%
+  summarize(height_variability = sd(height)) %>%
+  filter(height_variability >= 10)
+```
+```{r echo=FALSE}
+height_var
+```
+
+C.
+```{r include=FALSE}
+f_age_trend = olympics_top20 %>%
+  filter(sport=='Swimming') %>%
+  group_by(year, sex) %>%
+  summarize(avg_height = mean(age)) %>%
+  filter(sex=='F') %>%
+  arrange(year)
+f_age_trend 
+
+m_age_trend = olympics_top20 %>%
+  filter(sport=='Swimming') %>%
+  group_by(year, sex) %>%
+  summarize(avg_height = mean(age)) %>%
+  filter(sex=='M') %>%
+  arrange(year)
+m_age_trend 
+```
+```{r echo=FALSE}
+ggplot()+
+  geom_line(data = f_age_trend, aes(x=year, y=avg_height, color = "Female")) +
+  geom_line(data = m_age_trend, aes(x=year, y=avg_height, color = "Male")) +
+  ylab('Average Age') +
+  ggtitle("Age of Olympic Swimmers \nOver Time")
+```
+This graph shows the average age of male and female Olympic swimmers over time. In the Olympics early years there was greater variability of the average age. We can see the average age bottoms out and then slowly rises year over year to the present day. Note: Women competed for the first time in the 1900 Olympic games in Paris; [Source](https://olympics.com/ioc/faq/history-and-origin-of-the-games/when-did-women-first-compete-in-the-olympic-games)
+\newpage
+
+**4)**
+
+Now we will explore the data set sclass.csv which details the many characteristics of several S-class Mercedes trims. We want to focus on the 350, and 65 AMG trims and create a predictive model of price using mileage. To accomplish this we will be using utilizing K-nearest neighbors and K-folds. We generate our model on a training data set (80% of data) and then, using the remaining 20% of the data, test the the accuracy of our predictive line by the root mean squared error. We then plot the lowest RMSE predictive line against our data set to show what a reasonable, but not necessarily optimal model looks like. 
+
+```{r include=FALSE}
+sclass = read.csv("/Users/seanpierce/Documents/GitHub/ECO395M/data/sclass.csv")
+s350 = sclass %>%
+  filter(trim == 350) 
+s350
+
+s65 = sclass %>%
+  filter(trim == '65 AMG')
+s65
+```
+
+First, let's create our training and testing sets for both trims.
+```{r include=TRUE}
+split_350 = initial_split(s350, prop=0.8)
+train_350 = training(split_350)
+test_350 = testing(split_350)
+
+split_65 = initial_split(s65, prop=0.8)
+train_65 = training(split_65)
+test_65 = testing(split_65)
+```
+
+Next, we'll perform K-nearest neighbors for various & increasing values of K. We'll also plot each one to get a feel for how the bias and variance progresses with K. Let's start with the 350 S-class.  
+
+```{r echo=FALSE}
+knn2 = knnreg(price ~ mileage, data=train_350, k=2)
+rmse(knn2, test_350)
+
+test_350_2 = test_350 %>%
+  mutate(price_pred2 = predict(knn2, test_350))
+
+p_test_2 = ggplot(test_350_2) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+p_test_2 + geom_line(aes(x = mileage, y = price_pred2), color='red', size=0.8) +
+  ggtitle("350 s-class KNN where K=2")
+```
+\newpage
+
+```{r echo=FALSE, fig.height=4, fig.height=4}
+knn4 = knnreg(price ~ mileage, data=train_350, k=4)
+rmse(knn4, test_350)
+
+test_350_4 = test_350 %>%
+  mutate(price_pred4 = predict(knn4, test_350))
+
+p_test_4 = ggplot(test_350_4) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+p_test_4 + geom_line(aes(x = mileage, y = price_pred4), color='red', size=0.8)+
+  ggtitle("350 s-class KNN where K=4")
+
+
+
+knn10 = knnreg(price ~ mileage, data=train_350, k=10)
+rmse(knn10, test_350)
+
+test_350_10 = test_350 %>%
+  mutate(price_pred10 = predict(knn10, test_350))
+
+p_test_10 = ggplot(test_350_10) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+p_test_10 + geom_line(aes(x = mileage, y = price_pred10), color='red', size=0.8)+
+  ggtitle("350 s-class KNN where K=10")
+```
+\newpage
+
+```{r echo=FALSE, fig.height=4, fig.height=4}
+knn20 = knnreg(price ~ mileage, data=train_350, k=20)
+rmse(knn20, test_350)
+
+test_350_20 = test_350 %>%
+  mutate(price_pred20 = predict(knn20, test_350))
+
+p_test_20 = ggplot(test_350_20) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+p_test_20 + geom_line(aes(x = mileage, y = price_pred20), color='red', size=0.8)+
+  ggtitle("350 s-class KNN where K=20")
+
+
+
+knn25 = knnreg(price ~ mileage, data=train_350, k=25)
+rmse(knn25, test_350)
+
+test_350_25 = test_350 %>%
+  mutate(price_pred25 = predict(knn25, test_350))
+
+p_test_25 = ggplot(test_350_25) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+p_test_25 + geom_line(aes(x = mileage, y = price_pred25), color='red', size=0.8)+
+  ggtitle("350 s-class KNN where K=25")
+
+
+
+knn35 = knnreg(price ~ mileage, data=train_350, k=35)
+rmse(knn35, test_350)
+
+test_350_35 = test_350 %>%
+  mutate(price_pred35 = predict(knn35, test_350))
+
+p_test_35 = ggplot(test_350_35) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+p_test_35 + geom_line(aes(x = mileage, y = price_pred35), color='red', size=0.8)+
+  ggtitle("350 s-class KNN where K=35")
+
+
+
+knn50 = knnreg(price ~ mileage, data=train_350, k=50)
+rmse(knn50, test_350)
+
+test_350_50 = test_350 %>%
+  mutate(price_pred50 = predict(knn50, test_350))
+
+p_test_50 = ggplot(test_350_50) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+p_test_50 + geom_line(aes(x = mileage, y = price_pred50), color='red', size=0.8)+
+  ggtitle("350 s-class KNN where K=50")
+
+
+
+knn75 = knnreg(price ~ mileage, data=train_350, k=75)
+rmse(knn75, test_350)
+
+test_350_75 = test_350 %>%
+  mutate(price_pred75 = predict(knn75, test_350))
+
+p_test_75 = ggplot(test_350_75) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+p_test_75 + geom_line(aes(x = mileage, y = price_pred75), color='red', size=0.8)+
+  ggtitle("350 s-class KNN where K=75")
+```
+\newpage
+
+Now let's use a K-folds approach and graph the RMSEs of different K values. 
+
+```{r echo=FALSE}
+k_folds = 6
+
+s350_folds = crossv_kfold(s350, k=k_folds) 
+
+k_grid = c(2, 4, 6, 8, 10, 15, 20, 25, 30, 35, 40, 45,
+           50, 65, 76, 80, 90, 100, 125, 150, 175, 200, 250, 300)
+```
+
+The different K values we will be testing are:
+```{r echo=FALSE}
+k_grid
+```
+
+```{r include=FALSE}
+s350_kframe = foreach(k = k_grid, .combine = 'rbind') %dopar% {
+  models = map(s350_folds$train, ~ knnreg(price~mileage, k=k, data = ., use.all=FALSE))
+  errs = map2_dbl(models, s350_folds$test, modelr::rmse)
+  c(k=k, err = mean(errs), std_err = sd(errs)/sqrt(k_folds))
+} %>% as.data.frame
+```
+
+```{r echo=FALSE}
+ggplot(s350_kframe) +
+  geom_point(aes(x=k, y=err)) +
+  geom_errorbar(aes(x=k, ymin = err-std_err, ymax = err+std_err)) +
+  scale_x_log10()
+```
+From this plot of the RMSEs it appears that the optimal value of K is around 18. The corresponding RMSE with K=18:
+
+```{r echo=FALSE}
+models = map(s350_folds$train, ~ knnreg(price ~ mileage, k=18, data=., use.all=FALSE))
+
+errs = map2_dbl(models, s350_folds$test, modelr::rmse)
+
+mean(errs)
+```
+```{r include=FALSE}
+sd(errs)/sqrt(k_folds)
+```
+\newpage
+Let's plot this and see if we like our choice:
+
+```{r echo=FALSE}
+knn18 = knnreg(price ~ mileage, data=train_350, k=18)
+rmse(knn18, test_350)
+
+test350_18 = test_350 %>%
+  mutate(price_pred18 = predict(knn18, test_350))
+
+p_test_18 = ggplot(test350_18) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+p_test_18 + geom_line(aes(x = mileage, y = price_pred18), color='red', size=0.8) +
+  ggtitle("350 S-class prediction with optimal K value")
+```
+This looks great for the overall trend, but maybe doesn't capture enough variance in the data. Overall though, this seems like an effective predictive model.
+\newpage
+
+**65 AMG sclass**
+```{r echo=FALSE, fig.height=4, fig.height=4}
+
+knn2_65 = knnreg(price ~ mileage, data=train_65, k=2)
+rmse(knn2_65, test_65)
+
+test_65_2 = test_65 %>%
+  mutate(price_pred2 = predict(knn2_65, test_65))
+
+p65_test_2 = ggplot(test_65_2) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+p65_test_2 + geom_line(aes(x = mileage, y = price_pred2), color='red', size=0.8)+
+  ggtitle("65 AMG s-class KNN where K=2")
+```
+\newpage
+
+```{r echo=FALSE, fig.height=4, fig.height=4}
+knn4_65 = knnreg(price ~ mileage, data=train_65, k=4)
+rmse(knn4_65, test_65)
+
+test_65_4 = test_65 %>%
+  mutate(price_pred4 = predict(knn4_65, test_65))
+
+p65_test_4 = ggplot(test_65_4) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+p65_test_4 + geom_line(aes(x = mileage, y = price_pred4), color='red', size=0.8)+
+  ggtitle("65 AMG s-class KNN where K=4")
+
+knn10_65 = knnreg(price ~ mileage, data=train_65, k=10)
+rmse(knn10_65, test_65)
+
+test_65_10 = test_65 %>%
+  mutate(price_pred10 = predict(knn10_65, test_65))
+
+p65_test_10 = ggplot(test_65_10) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+p65_test_10 + geom_line(aes(x = mileage, y = price_pred10), color='red', size=0.8)+
+  ggtitle("65 AMG s-class KNN where K=10")
+
+
+
+knn20_65 = knnreg(price ~ mileage, data=train_65, k=20)
+rmse(knn20_65, test_65)
+
+test_65_20 = test_65 %>%
+  mutate(price_pred20 = predict(knn20_65, test_65))
+
+p65_test_20 = ggplot(test_65_20) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+p65_test_20 + geom_line(aes(x = mileage, y = price_pred20), color='red', size=0.8)+
+  ggtitle("65 AMG s-class KNN where K=20")
+
+
+
+knn25_65 = knnreg(price ~ mileage, data=train_65, k=25)
+rmse(knn25_65, test_65)
+
+test_65_25 = test_65 %>%
+  mutate(price_pred25 = predict(knn25_65, test_65))
+
+p65_test_25 = ggplot(test_65_25) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+p65_test_25 + geom_line(aes(x = mileage, y = price_pred25), color='red', size=0.8)+
+  ggtitle("65 AMG s-class KNN where K=25")
+
+
+
+knn35_65 = knnreg(price ~ mileage, data=train_65, k=35)
+rmse(knn35_65, test_65)
+
+test_65_35 = test_65 %>%
+  mutate(price_pred35 = predict(knn35_65, test_65))
+
+p65_test_35 = ggplot(test_65_35) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+p65_test_35 + geom_line(aes(x = mileage, y = price_pred35), color='red', size=0.8)+
+  ggtitle("65 AMG s-class KNN where K=35")
+
+
+
+knn50_65 = knnreg(price ~ mileage, data=train_65, k=50)
+rmse(knn50_65, test_65)
+
+test_65_50 = test_65 %>%
+  mutate(price_pred50 = predict(knn50_65, test_65))
+
+p65_test_50 = ggplot(test_65_50) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+
+p65_test_50 + geom_line(aes(x = mileage, y = price_pred50), color='red', size=0.8)+
+  ggtitle("65 AMG s-class KNN where K=50")
+
+
+knn75_65 = knnreg(price ~ mileage, data=train_65, k=75)
+rmse(knn75_65, test_65)
+
+test_65_75 = test_65 %>%
+  mutate(price_pred75 = predict(knn75_65, test_65))
+
+p65_test_75 = ggplot(test_65_75) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+
+p65_test_75 + geom_line(aes(x = mileage, y = price_pred75), color='red', size=0.8)+
+  ggtitle("65 AMG s-class KNN where K=75")
+```
+\newpage
+
+Now let's use a K-folds approach and graph the RMSEs of different K values, using the same K grid we used for the 350 s-class.
+
+```{r include=FALSE}
+k_folds = 6
+
+s65_folds = crossv_kfold(s65, k=k_folds) 
+
+s65_kframe = foreach(k = k_grid, .combine = 'rbind') %dopar% {
+  models = map(s65_folds$train, ~ knnreg(price~mileage, k=k, data = ., use.all=FALSE))
+  errs = map2_dbl(models, s65_folds$test, modelr::rmse)
+  c(k=k, err = mean(errs), std_err = sd(errs)/sqrt(k_folds))
+} %>% as.data.frame
+```
+
+```{r echo=FALSE}
+ggplot(s65_kframe) +
+  geom_point(aes(x=k, y=err)) +
+  geom_errorbar(aes(x=k, ymin = err-std_err, ymax = err+std_err)) +
+  scale_x_log10()
+```
+
+From this plot it appears that the optimal value of k is around 10
+
+```{r echo=FALSE}
+models_65 = map(s65_folds$train, ~ knnreg(price ~ mileage, k=10, data=., use.all=FALSE))
+
+errs_65 = map2_dbl(models, s65_folds$test, modelr::rmse)
+```
+
+\newpage
+
+Let's plot this and see if we agree that this is the optimal K value:
+
+```{r echo=FALSE}
+knn10 = knnreg(price ~ mileage, data=train_65, k=10)
+rmse(knn10, test_65)
+
+test10 = test_65 %>%
+  mutate(price_pred10_65 = predict(knn10, test_65))
+
+p_test_10 = ggplot(test10) +
+  geom_point(aes(x = mileage, y = price, alpha=0.1))
+
+p_test_10 + geom_line(aes(x = mileage, y = price_pred10_65), color='red', size=0.8) +
+  ggtitle("65 AMG S-class prediction with Optimal K value")
+```
+
+It seems that the 65 AMG predictive model has a lower average RMSE than the 350.  
+The 350 s-class has a higher optimal value of K.This is most likely true because the observations are more concentrated. There is less variance in price for a given mileage.
+
+knitr::knit("my_file.Rmd")
+
