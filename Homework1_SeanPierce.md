@@ -82,7 +82,7 @@ from the 1997 hit-film “Con Air” starring Nicholas Cage.
     appeared on the Billboard 100 each year). How has it changed over
     time?
 
-![](Homework1_SeanPierce_files/figure-markdown_strict/unnamed-chunk-14-1.png)
+![]("Homework1_SeanPierce_files/figure-markdown_strict/unnamed-chunk-14-1.png")
 
 There has been significant fluctuations in the diversity of music
 overtime. We can see that the 1960s had the greatest diversity. The
@@ -91,7 +91,7 @@ Mouth’s “All-Star” in 1999. There’s no doubt that No Doubt is
 responsible for this as well). The trend reversed in the early 2000s and
 has recently peaked. C.
 
-![](Homework1_SeanPierce_files/figure-markdown_strict/unnamed-chunk-16-1.png)
+![]("Homework1_SeanPierce_files/figure-markdown_strict/unnamed-chunk-16-1.png")
 This neat graph displays what can be thought of as the most popular
 musicians of modern times. We define the popularity as the number of
 songs they’ve written that spent ten weeks or longer on the Billboard. A
